@@ -13,7 +13,7 @@ import numpy as np
 from datasets.glove import Glove
 
 from .model_io import ModelOutput
-
+from utils.net_util import resnet_input_transform
 
 def normalize_adj(adj):
     adj = sp.coo_matrix(adj)
@@ -102,7 +102,13 @@ class GCN(torch.nn.Module):
         self.W2 = nn.Linear(1024, 1, bias=False)
 
         self.final_mapping = nn.Linear(n, 512)
-
+        self.resnet_built = False
+    def resnet_build(self):
+        image_res18 = models.resnet18(pretrained=True)
+        modules = list(image_res18.children())[:-2]
+        self.image_res18 = nn.Sequential(*modules).cuda()
+        self.resnet_built = True
+        self.cuda()
     def gcn_embed(self, state):
         x = self.resnet18[0](state)
         x = x.view(x.size(0), -1)
@@ -121,6 +127,8 @@ class GCN(torch.nn.Module):
         return x
 
     def embedding(self, state, target, action_probs):
+        if not self.resnet_built:
+            self.resnet_build()
         action_embedding_input = action_probs
 
         glove_embedding = F.relu(self.embed_glove(target))
@@ -128,7 +136,8 @@ class GCN(torch.nn.Module):
 
         action_embedding = F.relu(self.embed_action(action_embedding_input))
         action_reshaped = action_embedding.view(1, 10, 1, 1).repeat(1, 1, 7, 7)
-
+        img_tensor = resnet_input_transform(state.cpu().numpy().astype(np.uint8),224).cuda().unsqueeze(0)
+        state = self.image_res18(img_tensor)
         image_embedding = F.relu(self.conv1(state))
         x = self.dropout(image_embedding)
         x = torch.cat((x, glove_reshaped, action_reshaped), dim=1)
@@ -148,17 +157,17 @@ class GCN(torch.nn.Module):
         return actor_out, critic_out, (hx, cx)
 
     def forward(self, model_input, model_options):
-        state = model_input.state
+        state = model_input.state.cuda()
         (hx, cx) = model_input.hidden
 
-        target = model_input.target_class_embedding
-        action_probs = model_input.action_probs
+        target = model_input.target_class_embedding.cuda()
+        action_probs = model_input.action_probs.cuda()
         x, image_embedding = self.embedding(state, target, action_probs)
-        actor_out, critic_out, (hx, cx) = self.a3clstm(x, (hx, cx))
+        actor_out, critic_out, (hx, cx) = self.a3clstm(x, (hx.cuda(), cx.cuda()))
 
         return ModelOutput(
-            value=critic_out,
-            logit=actor_out,
-            hidden=(hx, cx),
-            embedding=image_embedding,
+            value=critic_out.detach().cpu(),
+            logit=actor_out.detach().cpu(),
+            hidden=(hx.detach().cpu(), cx.detach().cpu()),
+            embedding=image_embedding.detach().cpu(),
         )

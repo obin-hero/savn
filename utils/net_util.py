@@ -87,7 +87,7 @@ class ScalarMeanTracker(object):
                 self._counts[k] += 1
 
     def pop_and_reset(self):
-        means = {k: self._sums[k] / self._counts[k] for k in self._sums}
+        means = {k: self._sums[k] / self._counts[k] for k in self._sums if k not in ['frames', 'target']}
         self._sums = {}
         self._counts = {}
         return means

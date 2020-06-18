@@ -6,13 +6,15 @@ from torch.autograd import Variable
 
 def run_episode(player, args, total_reward, model_options, training):
     num_steps = args.num_steps
-
+    frames = []
+    target_object = player.episode.target_object
     for _ in range(num_steps):
         player.action(model_options, training)
         total_reward = total_reward + player.reward
+        frames.append(player.episode.current_frame.int().numpy())
         if player.done:
             break
-    return total_reward
+    return total_reward, {'frames': frames, 'target': target_object}
 
 
 def new_episode(

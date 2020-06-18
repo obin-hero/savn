@@ -9,7 +9,6 @@ import setproctitle
 
 from models.model_io import ModelOptions
 
-from agents.random_agent import RandomNavigationAgent
 
 import random
 

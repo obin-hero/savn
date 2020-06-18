@@ -77,9 +77,9 @@ def nonadaptivea3c_val(
         # Train on the new episode.
         while not player.done:
             # Make sure model is up to date.
-            player.sync_with_shared(shared_model)
+            #player.sync_with_shared(shared_model)
             # Run episode for num_steps or until player is done.
-            total_reward = run_episode(player, args, total_reward, model_options, False)
+            total_reward, info = run_episode(player, args, total_reward, model_options, False)
             # Compute the loss.
             loss = compute_loss(args, player, gpu_id, model_options)
             if not player.done:
@@ -90,7 +90,7 @@ def nonadaptivea3c_val(
         spl, best_path_length = compute_spl(player, player_start_state)
 
         bucketed_spl = get_bucketed_metrics(spl, best_path_length, player.success)
-
+        bucketed_spl.update(info)
         end_episode(
             player,
             res_queue,

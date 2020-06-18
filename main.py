@@ -17,7 +17,7 @@ from utils.class_finder import model_class, agent_class, optimizer_class
 from utils.net_util import ScalarMeanTracker
 from main_eval import main_eval
 
-from runners import nonadaptivea3c_train, nonadaptivea3c_val, savn_train, savn_val
+from runners import nonadaptivea3c_train, nonadaptivea3c_val
 
 
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -27,14 +27,11 @@ def main():
     setproctitle.setproctitle("Train/Test Manager")
     args = flag_parser.parse_arguments()
 
-    if args.model == "BaseModel" or args.model == "GCN":
-        args.learned_loss = False
-        args.num_steps = 50
-        target = nonadaptivea3c_val if args.eval else nonadaptivea3c_train
-    else:
-        args.learned_loss = True
-        args.num_steps = 6
-        target = savn_val if args.eval else savn_train
+
+    args.learned_loss = False
+    args.num_steps = 50
+    target = nonadaptivea3c_val if args.eval else nonadaptivea3c_train
+
 
     create_shared_model = model_class(args.model)
     init_agent = agent_class(args.agent_type)

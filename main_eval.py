@@ -13,8 +13,10 @@ import json
 from tqdm import tqdm
 
 from utils.net_util import ScalarMeanTracker
-from runners import nonadaptivea3c_val, savn_val
+from runners import nonadaptivea3c_val
 
+import imageio
+import cv2
 
 def main_eval(args, create_shared_model, init_agent):
     np.random.seed(args.seed)
@@ -35,16 +37,12 @@ def main_eval(args, create_shared_model, init_agent):
     processes = []
 
     res_queue = mp.Queue()
-    if args.model == "BaseModel" or args.model == "GCN":
-        args.learned_loss = False
-        args.num_steps = 50
-        target = nonadaptivea3c_val
-    else:
-        args.learned_loss = True
-        args.num_steps = 6
-        target = savn_val
+    args.learned_loss = False
+    args.num_steps = 50
+    target = nonadaptivea3c_val
 
     rank = 0
+    episode_num = 50
     for scene_type in args.scene_types:
         p = mp.Process(
             target=target,
@@ -55,7 +53,7 @@ def main_eval(args, create_shared_model, init_agent):
                 create_shared_model,
                 init_agent,
                 res_queue,
-                250,
+                episode_num,
                 scene_type,
             ),
         )
@@ -69,8 +67,7 @@ def main_eval(args, create_shared_model, init_agent):
     train_scalars = ScalarMeanTracker()
 
     proc = len(args.scene_types)
-    pbar = tqdm(total=250 * proc)
-
+    pbar = tqdm(total=episode_num * proc)
     try:
         while end_count < proc:
             train_result = res_queue.get()
@@ -80,6 +77,17 @@ def main_eval(args, create_shared_model, init_agent):
                 end_count += 1
                 continue
             train_scalars.add_scalars(train_result)
+            with imageio.get_writer(outputs/'%03d_%s.mp4'%(count,train_result['target']), mode='I', fps=10) as writer:
+                for t, image in enumerate(train_result['frames']):
+                    img = image.astype(np.uint8)
+                    target_name = train_result['target']
+                    cv2.putText(img, 'step: %d target: %s'%(t, target_name),(20,20), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 0), 1)
+                    if t == len(train_result['frames']) - 1:
+                        if train_result['success']:
+                            cv2.putText(img, 'SUCCESS! spl: %.2f'%(train_result['spl']), (20, 40), cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 0, 0), 1)
+                        else:
+                            cv2.putText(img, 'FAIL!', (20, 40), cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 0, 0), 1)
+                    writer.append_data(img)
 
         tracked_means = train_scalars.pop_and_reset()
 

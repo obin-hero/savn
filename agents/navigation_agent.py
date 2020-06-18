@@ -3,7 +3,7 @@ from utils.net_util import gpuify
 from models.model_io import ModelInput
 
 from .agent import ThorAgent
-
+import cv2
 
 class NavigationAgent(ThorAgent):
     """ A navigation agent who learns with pretrained embeddings. """
@@ -28,6 +28,7 @@ class NavigationAgent(ThorAgent):
             model_input.state = self.state()
         else:
             model_input.state = self.episode.current_frame
+
         model_input.hidden = self.hidden
         model_input.target_class_embedding = self.episode.glove_embedding
         model_input.action_probs = self.last_action_probs
