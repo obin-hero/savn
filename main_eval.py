@@ -42,7 +42,7 @@ def main_eval(args, create_shared_model, init_agent):
     target = nonadaptivea3c_val
 
     rank = 0
-    episode_num = 50
+    episode_num = 250
     for scene_type in args.scene_types:
         p = mp.Process(
             target=target,
@@ -77,17 +77,18 @@ def main_eval(args, create_shared_model, init_agent):
                 end_count += 1
                 continue
             train_scalars.add_scalars(train_result)
-            with imageio.get_writer(outputs/'%03d_%s.mp4'%(count,train_result['target']), mode='I', fps=10) as writer:
-                for t, image in enumerate(train_result['frames']):
-                    img = image.astype(np.uint8)
-                    target_name = train_result['target']
-                    cv2.putText(img, 'step: %d target: %s'%(t, target_name),(20,20), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 0), 1)
-                    if t == len(train_result['frames']) - 1:
-                        if train_result['success']:
-                            cv2.putText(img, 'SUCCESS! spl: %.2f'%(train_result['spl']), (20, 40), cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 0, 0), 1)
-                        else:
-                            cv2.putText(img, 'FAIL!', (20, 40), cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 0, 0), 1)
-                    writer.append_data(img)
+            if train_result['success'] or count % 40 == 0:
+                with imageio.get_writer('outputs/%03d_%s.mp4'%(count,train_result['target']), mode='I', fps=10) as writer:
+                    for t, image in enumerate(train_result['frames']):
+                        img = image.astype(np.uint8)
+                        target_name = train_result['target']
+                        cv2.putText(img, 'step: %d target: %s'%(t, target_name),(20,20), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 0), 1)
+                        if t == len(train_result['frames']) - 1:
+                            if train_result['success']:
+                                cv2.putText(img, 'SUCCESS! spl: %.2f'%(train_result['spl']), (20, 40), cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 0, 0), 1)
+                            else:
+                                cv2.putText(img, 'FAIL!', (20, 40), cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 0, 0), 1)
+                        writer.append_data(img)
 
         tracked_means = train_scalars.pop_and_reset()
 
