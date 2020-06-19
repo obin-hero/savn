@@ -1,11 +1,13 @@
-**This is a modified code of SAVN(Learning to Learn how to Learn: Self-Adaptive Visual Navigation using Meta-Learning) to reproduce the experimentt results of Visual Semantic Navigation using Scene Priors**
+❗ **This is a modified code from** [SAVN]( https://github.com/allenai/savn) **to reproduce the experiment results of <u>Visual Semantic Navigation using Scene Priors</u>** ❗
 
-# Scene Priors
+# Visual Semantic Navigation using Scene Priors
+By Wei Yang, Xiaolong Wang, Ali Farhadi, Abhinav Gupta, Roozbeh Mottaghi
 
-By Mitchell Wortsman, Kiana Ehsani, Mohammad Rastegari, Ali Farhadi and Roozbeh Mottaghi (Oral Presentation at CVPR 2019).
+This code is modified to experiment the performance of the agent with the knowledge graph. Original code was implemented to use pre-extracted feature, but I modified it to use raw image to see and understand how the agent moves.
+
 
 ## Citing
-
+Original code was the implementation of **"Learning to Learn How to Learn: Self-Adaptive Visual Navigation Using Meta-Learning"**
 ```
 @InProceedings{Wortsman_2019_CVPR,
   author={Mitchell Wortsman and Kiana Ehsani and Mohammad Rastegari and Ali Farhadi and Roozbeh Mottaghi},
@@ -15,23 +17,24 @@ By Mitchell Wortsman, Kiana Ehsani, Mohammad Rastegari, Ali Farhadi and Roozbeh 
   year = {2019}
 }
 ```
+This code is about **"Visual Semantic Navigation using Scene Priors"**
 
-## Results
-
-
-| Model  | SPL  &geq; 1 | Success  &geq; 1 | SPL   &geq; 5 | Success  &geq; 5 |
-| :-------------: | :-------------: | :-------------: | :-------------: | :-------------: |
-| [SAVN](#SAVN)  |  16.15  &pm; 0.5 | 40.86  &pm; 1.2 | 13.91  &pm; 0.5 | 28.70  &pm; 1.5 |
-| [Scene Priors](https://arxiv.org/abs/1810.06543)  | 15.47  &pm; 1.1 | 35.13  &pm; 1.3 | 11.37  &pm; 1.6 | 22.25  &pm; 2.7 |
-| [Non-Adaptive A3C](#Non-Adaptvie-A3C)  | 14.68  &pm; 1.8 | 33.04  &pm; 3.5 | 11.69  &pm; 1.9 | 21.44  &pm; 3.0 |
-
+```
+@conference{Yang-2019-113270,
+author = {Wei Yang and Xiaolong Wang and Ali Farhadi and Abhinav Gupta and Roozbeh Mottaghi},
+title = {Visual semantic navigation using scene priors},
+booktitle = {Proceedings of Seventh International Conference on Learning Representations (ICLR 2019)},
+year = {2019},
+month = {May},
+}
+```
 
 ## Setup
 
-- Clone the repository with `git clone https://github.com/allenai/savn.git && cd savn`.
+**Follow the original code setup**. Note that the data file sizes are huge.
 
+- Clone the repository with `git clone https://github.com/obin-hero/savn.git && cd savn`.
 - Install the necessary packages. If you are using pip then simply run `pip install -r requirements.txt`.
-
 - Download the [pretrained models](https://prior-datasets.s3.us-east-2.amazonaws.com/savn/pretrained_models.tar.gz) and
 [data](https://prior-datasets.s3.us-east-2.amazonaws.com/savn/data.tar.gz) to the `savn` directory. Untar with
 ```bash
@@ -47,24 +50,13 @@ The `data` folder contains:
 
 Note that the starting positions and scenes for the test and validation set may be found in `test_val_split`.
 
-If you wish to access the RGB images in addition to the ResNet features, replace `thor_offline_data` with [thor_offlline_data_with_images](https://prior-datasets.s3.us-east-2.amazonaws.com/savn/offline_data_with_images.tar.gz). If you wish to run your model on the image files,
-add the command line argument `--images_file_name images.hdf5`. 
+☝ You have to download [thor_offlline_data_with_images](https://prior-datasets.s3.us-east-2.amazonaws.com/savn/offline_data_with_images.tar.gz). As this code is implemented to use image data.
+
+
 
 ## Evaluation using Pretrained Models
 
 Use the following code to run the pretrained models on the test set. Add the argument `--gpu-ids 0 1` to speed up the evaluation by using GPUs.
-
-#### SAVN
-```bash
-python main.py --eval \
-    --test_or_val test \
-    --episode_type TestValEpisode \
-    --load_model pretrained_models/savn_pretrained.dat \
-    --model SAVN \
-    --results_json savn_test.json 
-
-cat savn_test.json 
-```
 
 #### Scene Priors
 ```bash
@@ -75,94 +67,15 @@ python main.py --eval \
     --model GCN \
     --glove_dir ./data/gcn \
     --results_json scene_priors_test.json
+    --images_file_name images.hdf5
 
 cat scene_priors_test.json 
 ```
-
-
-#### Non-Adaptvie-A3C
-```bash
-python main.py --eval \
-    --test_or_val test \
-    --episode_type TestValEpisode \
-    --load_model pretrained_models/nonadaptivea3c_pretrained.dat \
-    --results_json nonadaptivea3c_test.json
-
-cat nonadaptivea3c_test.json
-```
+The video of each episode will be saved in *outputs*/ folder
 
 The result may vary depending on system and set-up though we obtain:
 
-| Model  | SPL  &geq; 1 | Success  &geq; 1 | SPL   &geq; 5 | Success  &geq; 5 |
-| :-------------: | :-------------: | :-------------: | :-------------: | :-------------: |
-| [SAVN](#SAVN)  |  16.13 | 42.20 | 14.30 | 30.09 |
-| [Scene Priors](https://arxiv.org/abs/1810.06543)  |  14.86 | 36.90 | 11.49 | 24.70 |
-| [Non-Adaptive A3C](#Non-Adaptvie-A3C)  | 14.10 | 32.40 | 10.73 | 19.16 |
+|                      Model                       | SPL  &geq; 1 | Success  &geq; 1 | SPL   &geq; 5 | Success  &geq; 5 |
+| :----------------------------------------------: | :----------: | :--------------: | :-----------: | :--------------: |
+| [Scene Priors](https://arxiv.org/abs/1810.06543) |    14.86     |      36.90       |     11.49     |      24.70       |
 
-The results in the [initial submission](https://arxiv.org/abs/1812.00971v1) (shown below) were the best (in terms of success on the validation set). After the initial submission, we trained the model 5 times from scratch to obtain error bars, which you may find in [results](#results).
-
-| Model  | SPL  &geq; 1 | Success  &geq; 1 | SPL   &geq; 5 | Success  &geq; 5 |
-| :-------------: | :-------------: | :-------------: | :-------------: | :-------------: |
-| [SAVN](#SAVN)  |  16.13 | 42.10 | 13.19 | 30.54 |
-| [Non-Adaptive A3C](#Non-Adaptvie-A3C)  | 13.73 | 32.90 | 10.88 | 20.66 |
-
-## How to Train your SAVN
-
-You may train your own models by using the commands below.
-
-#### Training SAVN
-```bash
-python main.py \
-    --title savn_train \
-    --model SAVN \
-    --gpu-ids 0 1 \
-    --workers 12
-```
-
-
-#### Training Non-Adaptvie A3C
-```bash
-python main.py \
-    --title nonadaptivea3c_train \
-    --gpu-ids 0 1 \
-    --workers 12
-```
-
-
-## How to Evaluate your Trained Model
-
-You may use the following commands for evaluating models you have trained.
-
-#### SAVN
-```bash
-python full_eval.py \
-    --title savn \
-    --model SAVN \
-    --results_json savn_results.json \
-    --gpu-ids 0 1
-    
-cat savn_results.json
-```
-
-#### Non-Adaptive A3C
-```bash
-python full_eval.py \
-    --title nonadaptivea3c \
-    --results_json nonadaptivea3c_results.json \
-    --gpu-ids 0 1
-    
-cat nonadaptivea3c_results.json
-```
-
-####  Random Agent
-```bash
-python main.py \
-    --eval \
-    --test_or_val test \
-    --episode_type TestValEpisode \
-    --title random_test \
-    --agent_type RandomNavigationAgent \
-    --results_json random_results.json
-    
-cat random_results.json
-```
